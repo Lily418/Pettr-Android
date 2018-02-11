@@ -1,12 +1,12 @@
 package pettr.lily.pettr
 
 import android.app.Activity
+import android.graphics.BitmapFactory
 import android.os.Bundle
+import android.util.Log
 import com.google.android.gms.maps.*
+import com.google.android.gms.maps.model.*
 
-import com.google.android.gms.maps.model.LatLng
-import com.google.android.gms.maps.model.Marker
-import com.google.android.gms.maps.model.MarkerOptions
 import pettr.lily.pettr.R
 import retrofit2.Call
 import retrofit2.Callback
@@ -20,7 +20,7 @@ class MainActivity : Activity(), OnMapReadyCallback {
 
     private var mMap: GoogleMap? = null
     private var cats : List<Cat> = emptyList()
-    private var markers : MutableList<Marker> = mutableListOf()
+    private var groundOverlays : MutableList<GroundOverlay> = mutableListOf()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -54,14 +54,14 @@ class MainActivity : Activity(), OnMapReadyCallback {
 
         // Refresh Map Pins will be called after API Response and Map is Ready but we don't know which will happen first
         // so this ensures this method only has side effects once
-        if(mMap == null ||  markers.count() > 0) {
+        if(mMap == null ||  groundOverlays.count() > 0) {
             return
         }
 
         cats.forEach {
-            val marker = mMap?.addMarker(MarkerOptions().position(it.latlng).title("Cat"))
-            marker?.let {
-                markers.add(it)
+            val groundOverlay = mMap?.addGroundOverlay(GroundOverlayOptions().position(it.latlng, 250.0f, 250.0f).image(BitmapDescriptorFactory.fromBitmap(it.bitmap)))
+            groundOverlay?.let {
+                groundOverlays.add(it)
             }
         }
     }
@@ -77,6 +77,16 @@ class MainActivity : Activity(), OnMapReadyCallback {
      */
     override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
+        googleMap.setOnCameraMoveListener {
+            val zoom = googleMap.cameraPosition.zoom
+            val maxZoom = googleMap.maxZoomLevel
+            val zoomScale = maxZoom / zoom
+            Log.d("CameraZoomCalc", (googleMap.cameraPosition.zoom).toString())
+            groundOverlays.forEach {
+                val scaledSize = 20f * Math.pow(zoomScale.toDouble(), 6.25).toFloat()
+                it.setDimensions(Math.min(scaledSize, 400000f))
+            }
+        }
         refreshMapPins()
     }
 }
