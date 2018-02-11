@@ -5,12 +5,22 @@ import android.os.Bundle
 import com.google.android.gms.maps.*
 
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
 import pettr.lily.pettr.R
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
+import java.util.*
+
 
 class MainActivity : Activity(), OnMapReadyCallback {
 
-    private lateinit var mMap: GoogleMap
+    private var mMap: GoogleMap? = null
+    private var cats : List<Cat> = emptyList()
+    private var markers : MutableList<Marker> = mutableListOf()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -18,6 +28,42 @@ class MainActivity : Activity(), OnMapReadyCallback {
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         val mapFragment = fragmentManager.findFragmentById(R.id.map) as MapFragment
         mapFragment.getMapAsync(this)
+
+        val retrofit = Retrofit.Builder()
+                .baseUrl("http://192.168.1.2:3000")
+                .addConverterFactory(GsonConverterFactory.create())
+                .build()
+
+        val service = retrofit.create<PettrAPI>(PettrAPI::class.java)
+        service.getCats("[51.548066, -0.070590]").enqueue(object : Callback<List<Cat>> {
+            override fun onFailure(call: Call<List<Cat>>?, t: Throwable?) {
+                print(call.toString())
+            }
+
+            override fun onResponse(call: Call<List<Cat>>?, response: Response<List<Cat>>?) {
+                response?.body()?.let {
+                    cats = it
+                    refreshMapPins()
+                }
+            }
+
+        })
+    }
+
+    fun refreshMapPins() {
+
+        // Refresh Map Pins will be called after API Response and Map is Ready but we don't know which will happen first
+        // so this ensures this method only has side effects once
+        if(mMap == null ||  markers.count() > 0) {
+            return
+        }
+
+        cats.forEach {
+            val marker = mMap?.addMarker(MarkerOptions().position(it.latlng).title("Cat"))
+            marker?.let {
+                markers.add(it)
+            }
+        }
     }
 
     /**
@@ -31,10 +77,6 @@ class MainActivity : Activity(), OnMapReadyCallback {
      */
     override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
-
-        // Add a marker in Sydney and move the camera
-        val sydney = LatLng(-34.0, 151.0)
-        mMap.addMarker(MarkerOptions().position(sydney).title("Marker in Sydney"))
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney))
+        refreshMapPins()
     }
 }
