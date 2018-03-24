@@ -1,8 +1,8 @@
 package pettr.lily.pettr
 
+import okhttp3.MultipartBody
 import retrofit2.Call
-import retrofit2.http.GET
-import retrofit2.http.Query
+import retrofit2.http.*
 
 
 /**
@@ -11,4 +11,8 @@ import retrofit2.http.Query
 interface PettrAPI {
     @GET("cat")
     fun getCats(@Query("location") location: String): Call<List<Cat>>
+
+    @Multipart
+    @PUT("cat")
+    fun putCat(@Query("location") location: String, @Part cat: MultipartBody.Part): Call<Any?>
 }

@@ -14,8 +14,9 @@ class Cat {
     var location : PettrPoint? = null
     var photo : String? = null
 
+    // API returns GeoJSON which uses the order [longitude, latitude]
     val latlng : LatLng
-        get() = LatLng(location!!.coordinates[0], location!!.coordinates[1])
+        get() = LatLng(location!!.coordinates[1], location!!.coordinates[0])
 
     val bitmap : Bitmap
         get() {
