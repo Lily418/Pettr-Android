@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">Pettr</string>
+    <string name="connect_exception">The server did not come in when called, shouting louder…</string>
+    <string name="no_network_exception">Cannot connect to the internet, the internet is where the cats live</string>
+    <string name="other_network_exception">Failed to find cats…trying again</string>
+    <string name="other_server_error" >The server pretended not to hear you, getting treats to try again…</string>
 </resources>

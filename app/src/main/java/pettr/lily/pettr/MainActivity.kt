@@ -1,24 +1,32 @@
 package pettr.lily.pettr
 
 import android.Manifest
-import android.app.Activity
 import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
 import android.graphics.BitmapFactory
+import android.graphics.ColorFilter
+import android.graphics.PorterDuff
 import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
 import android.media.ExifInterface
+import android.net.ConnectivityManager
 import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
 import android.support.v4.app.ActivityCompat
 import android.support.v4.content.ContextCompat
+import android.support.v4.content.res.ResourcesCompat
+import android.support.v7.app.AppCompatActivity
+import android.support.v7.widget.Toolbar
 import android.util.Log
+import android.view.View
 import com.google.android.gms.maps.*
 import com.google.android.gms.maps.model.*
 import kotlinx.android.synthetic.main.activity_main.*
+import kotlinx.android.synthetic.main.toolbar.*
+import kotlinx.android.synthetic.main.toolbar.view.*
 import okhttp3.MediaType
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
@@ -29,9 +37,10 @@ import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.io.File
+import java.net.ConnectException
 
 
-class MainActivity : Activity(), OnMapReadyCallback, LocationListener {
+class MainActivity : AppCompatActivity(), OnMapReadyCallback, LocationListener {
     override fun onLocationChanged(location: Location?) {
        // TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
@@ -48,6 +57,7 @@ class MainActivity : Activity(), OnMapReadyCallback, LocationListener {
       //  TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
+    private lateinit var toolbarErrorManager : ToolbarErrorManager
     private var mMap: GoogleMap? = null
     private var mCurrentPhotoPath : String? = null
     private var cats : List<Cat> = emptyList()
@@ -64,16 +74,37 @@ class MainActivity : Activity(), OnMapReadyCallback, LocationListener {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        setSupportActionBar(toolbar)
+        supportActionBar?.setDisplayShowTitleEnabled(false)
+        toolbarErrorManager = ToolbarErrorManager(toolbar_error)
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         val mapFragment = fragmentManager.findFragmentById(R.id.map) as MapFragment
         mapFragment.getMapAsync(this)
 
         pettrService.getCats("[-0.070590, 51.548066]").enqueue(object : Callback<List<Cat>> {
             override fun onFailure(call: Call<List<Cat>>?, t: Throwable?) {
-                print(call.toString())
+
+                print((getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager).activeNetworkInfo)
+
+                if((getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager).activeNetworkInfo == null) {
+                    toolbarErrorManager.updateError(ToolbarErrorManager.ToolbarError(ToolbarErrorManager.ToolbarErrorTypes.NetworkError, getString(R.string.no_network_exception)))
+                    return
+                }
+
+                if(t is ConnectException) {
+                    toolbarErrorManager.updateError(ToolbarErrorManager.ToolbarError(ToolbarErrorManager.ToolbarErrorTypes.NetworkError, getString(R.string.connect_exception)))
+                    return
+                }
+
+                toolbarErrorManager.updateError(ToolbarErrorManager.ToolbarError(ToolbarErrorManager.ToolbarErrorTypes.NetworkError, getString(R.string.other_network_exception)))
             }
 
             override fun onResponse(call: Call<List<Cat>>?, response: Response<List<Cat>>?) {
+                if(response == null || !response.isSuccessful) {
+                    toolbarErrorManager.updateError(ToolbarErrorManager.ToolbarError(ToolbarErrorManager.ToolbarErrorTypes.ServerError, getString(R.string.other_server_error)))
+                    return
+                }
+
                 response?.body()?.let {
                     cats = it
                     refreshMapPins()
@@ -87,7 +118,7 @@ class MainActivity : Activity(), OnMapReadyCallback, LocationListener {
         }
     }
 
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>?, grantResults: IntArray?) {
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         when (requestCode) {
             PERMISSION_REQUEST_CAMERA -> launchCamera()
