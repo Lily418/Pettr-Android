@@ -278,6 +278,8 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, LocationListener {
             groundOverlay?.let {
                 groundOverlays.add(it)
             }
+
+            scaleOverlays(mMap!!)
         }
     }
 
@@ -293,15 +295,18 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, LocationListener {
     override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
         googleMap.setOnCameraMoveListener {
-            val zoom = googleMap.cameraPosition.zoom
-            val maxZoom = googleMap.maxZoomLevel
-            val zoomScale = maxZoom / zoom
-            Log.d("CameraZoomCalc", (googleMap.cameraPosition.zoom).toString())
-            groundOverlays.forEach {
-                val scaledSize = 20f * Math.pow(zoomScale.toDouble(), 6.25).toFloat()
-                it.setDimensions(Math.min(scaledSize, 400000f))
-            }
+            scaleOverlays(googleMap)
         }
         refreshMapPins()
+    }
+
+    fun scaleOverlays(googleMap: GoogleMap) {
+        val zoom = googleMap.cameraPosition.zoom
+        val maxZoom = googleMap.maxZoomLevel
+        val zoomScale = maxZoom / zoom
+        groundOverlays.forEach {
+            val scaledSize = 20f * Math.pow(zoomScale.toDouble(), 6.25).toFloat()
+            it.setDimensions(Math.min(scaledSize, 400000f))
+        }
     }
 }
