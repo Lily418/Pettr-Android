@@ -11,7 +11,7 @@ class ToolbarErrorManager(private val textView: TextView) {
 
 
     enum class ToolbarErrorTypes {
-        ServerError, NetworkError, LocationError
+        ServerError, NetworkError, LocationError, NoError
 
     }
 

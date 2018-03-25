@@ -53,7 +53,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, LocationListener {
     }
 
     override fun onProviderEnabled(provider: String?) {
-       // TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        refreshCats()
     }
 
     override fun onProviderDisabled(provider: String?) {
@@ -83,8 +83,25 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, LocationListener {
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         val mapFragment = fragmentManager.findFragmentById(R.id.map) as MapFragment
         mapFragment.getMapAsync(this)
+        refreshCats()
+        floating_action_button.setOnClickListener {
+            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.CAMERA,  Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.ACCESS_FINE_LOCATION), PERMISSION_REQUEST_CAMERA)
+        }
+    }
 
-        pettrService.getCats("[-0.070590, 51.548066]").enqueue(object : Callback<List<Cat>> {
+    override fun onResume() {
+        super.onResume()
+        refreshCats()
+    }
+
+    private fun refreshCats() {
+        val location = getLocation()
+        if(location == null) {
+            toolbarErrorManager.updateError(ToolbarErrorManager.ToolbarError(ToolbarErrorManager.ToolbarErrorTypes.LocationError, getString(R.string.waiting_for_location)))
+            return
+        }
+
+        pettrService.getCats(encodeLocation(longitude = location.longitude, latitude = location.latitude)).enqueue(object : Callback<List<Cat>> {
             override fun onFailure(call: Call<List<Cat>>?, t: Throwable?) {
 
                 print((getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager).activeNetworkInfo)
@@ -109,6 +126,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, LocationListener {
                 }
 
                 response.body()?.let {
+                    toolbarErrorManager.updateError(ToolbarErrorManager.ToolbarError(ToolbarErrorManager.ToolbarErrorTypes.NoError, ""))
                     cats = it
                     refreshMapPins()
                 }
@@ -116,9 +134,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, LocationListener {
 
         })
 
-        floating_action_button.setOnClickListener {
-            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.CAMERA,  Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.ACCESS_FINE_LOCATION), PERMISSION_REQUEST_CAMERA)
-        }
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
