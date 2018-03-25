@@ -209,7 +209,8 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, LocationListener {
         }
 
         if(longitude == null || latitude == null) {
-            throw Error("Hey sorry I don't know where this cat lives")
+            toolbarErrorManager.updateError(ToolbarErrorManager.ToolbarError(ToolbarErrorManager.ToolbarErrorTypes.LocationError, getString(R.string.no_photo_location)))
+            return
         }
 
 
