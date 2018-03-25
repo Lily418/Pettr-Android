@@ -26,6 +26,9 @@ import android.util.Log
 import android.view.View
 import com.google.android.gms.maps.*
 import com.google.android.gms.maps.model.*
+import io.sentry.Sentry
+import io.sentry.android.AndroidSentryClientFactory
+import io.sentry.environment.SentryEnvironment
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.toolbar.*
 import kotlinx.android.synthetic.main.toolbar.view.*
@@ -76,6 +79,11 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, LocationListener {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        val sentryDsn = "https://661351d99ec4466492af2189ab4f0b8c:f2060491301244d38aecd7c617d9d649@sentry.io/578443";
+        val sntry = Sentry.init(sentryDsn, AndroidSentryClientFactory(applicationContext));
+        sntry.environment = BuildConfig.BUILD_TYPE
+
         setContentView(R.layout.activity_main)
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayShowTitleEnabled(false)
