@@ -83,9 +83,11 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, LocationListener {
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         val mapFragment = fragmentManager.findFragmentById(R.id.map) as MapFragment
         mapFragment.getMapAsync(this)
-        refreshCats()
+
+        ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), PERMISSION_REQUEST_LOCATION)
+
         floating_action_button.setOnClickListener {
-            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.CAMERA,  Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.ACCESS_FINE_LOCATION), PERMISSION_REQUEST_CAMERA)
+            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.CAMERA,  Manifest.permission.WRITE_EXTERNAL_STORAGE), PERMISSION_REQUEST_CAMERA)
         }
     }
 
@@ -140,7 +142,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, LocationListener {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         when (requestCode) {
             PERMISSION_REQUEST_CAMERA -> launchCamera()
-            PERMISSION_REQUEST_LOCATION -> TODO()
+            PERMISSION_REQUEST_LOCATION -> refreshCats()
         }
     }
 
@@ -321,11 +323,8 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, LocationListener {
      */
     override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
-        googleMap.setOnCameraMoveListener {
-            scaleOverlays(googleMap)
-        }
-        refreshMapPins()
     }
+
 
     fun scaleOverlays(googleMap: GoogleMap) {
         val zoom = googleMap.cameraPosition.zoom
