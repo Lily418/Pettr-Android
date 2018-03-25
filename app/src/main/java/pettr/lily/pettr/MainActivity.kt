@@ -206,18 +206,26 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, LocationListener {
 
 
         // Optimistic adding image to map
-        mMap?.addGroundOverlay(GroundOverlayOptions().position(LatLng(latitude, longitude), 250.0f, 250.0f).image(BitmapDescriptorFactory.fromPath(file.absolutePath)))
-        mMap?.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(latitude, longitude), 15f))
 
         val catPhoto = BitmapFactory.decodeFile(file.absolutePath)
         val scale = 250.0 / catPhoto.width
-
 
         val cat = Cat()
         cat._bitmap = cat.scaleBitmap(catPhoto)
         catPhoto.recycle()
         val stream = ByteArrayOutputStream()
         cat.bitmap.compress(Bitmap.CompressFormat.JPEG, 100, stream)
+
+        val groundOverlay =  mMap?.addGroundOverlay(GroundOverlayOptions().position(LatLng(latitude, longitude), 250.0f, 250.0f).image(BitmapDescriptorFactory.fromBitmap(cat.bitmap)))
+
+        groundOverlay?.let {
+            groundOverlays.add(it)
+        }
+
+        mMap?.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(latitude, longitude), 15f))
+       scaleOverlays(mMap!!)
+
+
 
         pettrService.putCat(encodeLocation(longitude, latitude), MultipartBody.Part.createFormData("cat", file.name, RequestBody.create(MediaType.parse("image/jpeg"), stream.toByteArray()))).enqueue(object : Callback<Any?> {
             override fun onFailure(call: Call<Any?>?, t: Throwable?) {
@@ -307,9 +315,10 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, LocationListener {
             groundOverlay?.let {
                 groundOverlays.add(it)
             }
-
-            scaleOverlays(mMap!!)
         }
+
+        scaleOverlays(mMap!!)
+
     }
 
     /**
@@ -323,6 +332,9 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, LocationListener {
      */
     override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
+        googleMap.setOnCameraMoveListener {
+            scaleOverlays(googleMap)
+        }
     }
 
 
