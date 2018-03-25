@@ -20,6 +20,7 @@ import android.support.v4.content.ContextCompat
 import android.support.v4.content.res.ResourcesCompat
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.Toolbar
+import android.util.Base64
 import android.util.Log
 import android.view.View
 import com.google.android.gms.maps.*
@@ -105,7 +106,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, LocationListener {
                     return
                 }
 
-                response?.body()?.let {
+                response.body()?.let {
                     cats = it
                     refreshMapPins()
                 }
@@ -184,6 +185,11 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, LocationListener {
             throw Error("Hey sorry I don't know where this cat lives")
         }
 
+
+        // Optimistic adding image to map
+        mMap?.addGroundOverlay(GroundOverlayOptions().position(LatLng(latitude, longitude), 250.0f, 250.0f).image(BitmapDescriptorFactory.fromPath(file.absolutePath)))
+        mMap?.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(latitude, longitude), 15f))
+
         pettrService.putCat(encodeLocation(longitude, latitude), MultipartBody.Part.createFormData("cat", file.name, RequestBody.create(MediaType.parse("image/jpeg"), file))).enqueue(object : Callback<Any?> {
             override fun onFailure(call: Call<Any?>?, t: Throwable?) {
                 print(call.toString())
@@ -205,8 +211,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, LocationListener {
     }
 
     fun getLocation(): Location? {
-
-
         var location : Location? = null
 
         try {
