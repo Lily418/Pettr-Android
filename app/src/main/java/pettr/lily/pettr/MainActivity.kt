@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.ColorFilter
 import android.graphics.PorterDuff
@@ -37,6 +38,7 @@ import retrofit2.Callback
 import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.net.ConnectException
 
@@ -190,7 +192,17 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, LocationListener {
         mMap?.addGroundOverlay(GroundOverlayOptions().position(LatLng(latitude, longitude), 250.0f, 250.0f).image(BitmapDescriptorFactory.fromPath(file.absolutePath)))
         mMap?.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(latitude, longitude), 15f))
 
-        pettrService.putCat(encodeLocation(longitude, latitude), MultipartBody.Part.createFormData("cat", file.name, RequestBody.create(MediaType.parse("image/jpeg"), file))).enqueue(object : Callback<Any?> {
+        val catPhoto = BitmapFactory.decodeFile(file.absolutePath)
+        val scale = 250.0 / catPhoto.width
+
+
+        val cat = Cat()
+        cat._bitmap = cat.scaleBitmap(catPhoto)
+        catPhoto.recycle()
+        val stream = ByteArrayOutputStream()
+        cat.bitmap.compress(Bitmap.CompressFormat.JPEG, 100, stream)
+
+        pettrService.putCat(encodeLocation(longitude, latitude), MultipartBody.Part.createFormData("cat", file.name, RequestBody.create(MediaType.parse("image/jpeg"), stream.toByteArray()))).enqueue(object : Callback<Any?> {
             override fun onFailure(call: Call<Any?>?, t: Throwable?) {
                 print(call.toString())
             }
