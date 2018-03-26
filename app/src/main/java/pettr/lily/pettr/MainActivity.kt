@@ -69,7 +69,8 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, LocationListener {
     private var cats : List<Cat> = emptyList()
     private var groundOverlays : MutableList<GroundOverlay> = mutableListOf()
     private val pettrService : PettrAPI = Retrofit.Builder()
-            .baseUrl("http://192.168.1.3:3000")
+            .baseUrl(PETTR_API_LOCATION)
+            .addConverterFactory(EmptyArrayConverterFactory())
             .addConverterFactory(GsonConverterFactory.create())
             .build().create<PettrAPI>(PettrAPI::class.java)
 
@@ -138,6 +139,10 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, LocationListener {
                 response.body()?.let {
                     toolbarErrorManager.updateError(ToolbarErrorManager.ToolbarError(ToolbarErrorManager.ToolbarErrorTypes.NoError, ""))
                     cats = it
+
+                    if(cats.size == 0) {
+                        toolbarErrorManager.updateError(ToolbarErrorManager.ToolbarError(ToolbarErrorManager.ToolbarErrorTypes.NoError, getString(R.string.no_cats_yet)))
+                    }
                     refreshMapPins()
                 }
             }
